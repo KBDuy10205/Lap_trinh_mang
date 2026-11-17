@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sân đá luân lưu</title>
+    <link rel="stylesheet" href="/css/app.css?v=20261117-visual2">
+</head>
+<body>
+    <main class="page game-page">
+        <header class="page-header game-header">
+            <div>
+                <h1>Sân đá luân lưu</h1>
+                <p id="role-label" class="subtle">Đang tải trận...</p>
+            </div>
+            <div class="game-actions"><p id="turn-label" class="turn-badge"></p><button id="leave-room-button" type="button" class="secondary-button">Rời phòng</button></div>
+        </header>
+
+        <p id="message" class="message">Đang đồng bộ trạng thái trận...</p>
+        <section class="game-card">
+            <div class="scoreboard">
+                <div class="score-player"><span id="player-one-name">Người chơi 1</span><strong id="score-one">0</strong></div>
+                <div class="score-divider">:</div>
+                <div class="score-player"><span id="player-two-name">Người chơi 2</span><strong id="score-two">0</strong></div>
+            </div>
+
+            <div id="pitch" class="pitch role-shooter">
+                <div class="center-circle"></div><div class="penalty-area penalty-area-top"></div><div class="penalty-area penalty-area-bottom"></div>
+                <div class="goal goal-top"><span id="goal-top-label" class="goal-label">Khung thành đối phương</span><div class="net"></div></div>
+                <div class="goal goal-bottom"><span id="goal-bottom-label" class="goal-label">Khung thành của bạn</span><div class="net"></div></div>
+                <div id="opponent-figure" class="footballer opponent-player keeper"><span class="head"></span><span class="shirt"></span><span class="arm arm-left"></span><span class="arm arm-right"></span><span class="leg leg-left"></span><span class="leg leg-right"></span><span id="opponent-figure-label" class="figure-label">Thủ môn đối phương</span></div>
+                <div id="local-figure" class="footballer local-player striker"><span class="head"></span><span class="shirt"></span><span class="arm arm-left"></span><span class="arm arm-right"></span><span class="leg leg-left"></span><span class="leg leg-right"></span><span id="local-figure-label" class="figure-label">Bạn · Người sút</span></div>
+                <div class="ball" aria-label="Bóng đá"></div><div class="pitch-caption"><span id="scene-caption">Tấn công khung thành đối phương</span></div>
+                <div id="resolution-overlay" class="resolution-overlay hidden"><strong id="resolution-outcome"></strong><span>Lượt kế tiếp sau <b id="resolution-countdown">3</b></span></div>
+            </div>
+
+            <div id="choice-area" class="choice-panel">
+                <div class="choice-copy"><h2>Chọn hướng của bạn</h2><p id="choice-hint">Chọn kín một hướng trước khi hết giờ.</p></div>
+                <p id="deadline-label" class="deadline"></p>
+                <div class="direction-buttons">
+                    <button type="button" data-direction="LEFT"><span>←</span> Trái</button>
+                    <button type="button" data-direction="CENTER"><span>●</span> Giữa</button>
+                    <button type="button" data-direction="RIGHT">Phải <span>→</span></button>
+                </div>
+            </div>
+            <section id="result-area" class="hidden">
+                <h2>Trận đấu kết thúc</h2>
+                <p id="result-label"></p>
+                <a class="button-link" href="/home.html">Về sảnh game</a>
+            </section>
+        </section>
+    </main>
+    <script src="/js/game.js?v=20261117-visual4"></script>
+</body>
+</html>

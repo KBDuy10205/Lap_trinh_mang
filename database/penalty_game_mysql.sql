@@ -9,10 +9,12 @@ SET time_zone = '+00:00';
 CREATE TABLE accounts (
   user_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+  email VARCHAR(254) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
   password_hash VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   status ENUM('ACTIVE','LOCKED') NOT NULL DEFAULT 'ACTIVE',
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  UNIQUE KEY uq_accounts_username (username)
+  UNIQUE KEY uq_accounts_username (username),
+  UNIQUE KEY uq_accounts_email (email)
 ) ENGINE=InnoDB;
 
 CREATE TABLE player_profiles (

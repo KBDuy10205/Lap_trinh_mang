@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sảnh game - Đá luân lưu 2 người</title>
+    <link rel="stylesheet" href="/css/app.css?v=20261117-visual3">
+</head>
+<body>
+    <main class="page home-page">
+        <header class="page-header home-header">
+            <div>
+                <p class="eyebrow">⚽ PENALTY ARENA</p>
+                <h1>Game đá luân lưu 2 người</h1>
+                <p id="player-name" class="subtle">Đang tải người chơi...</p>
+            </div>
+            <button id="logout-button" type="button" class="secondary-button">Đăng xuất</button>
+        </header>
+
+        <p id="message" class="message">Đang tải sảnh game...</p>
+
+        <section id="lobby-panel" class="form-grid lobby-grid">
+            <article class="card lobby-card create-card">
+                <span class="action-icon">+</span>
+                <h2>Tạo phòng</h2>
+                <p>Nhận mã phòng gồm 8 ký tự để mời đối thủ.</p>
+                <button id="create-room-button" type="button">Tạo phòng mới</button>
+            </article>
+
+            <article class="card lobby-card join-card">
+                <span class="action-icon">⌁</span>
+                <h2>Tham gia phòng</h2>
+                <form id="join-room-form">
+                    <label>
+                        Mã phòng
+                        <input name="roomCode" required minlength="8" maxlength="8" pattern="[A-Za-z0-9]{8}" autocomplete="off">
+                    </label>
+                    <button type="submit">Vào phòng</button>
+                </form>
+            </article>
+        </section>
+
+        <section id="room-panel" class="card room-card hidden">
+            <div class="room-heading">
+                <div>
+                    <h2>Phòng chờ</h2>
+                    <p>Mã phòng: <strong id="room-code"></strong></p>
+                </div>
+                <button id="refresh-room-button" type="button" class="secondary-button">Làm mới</button>
+            </div>
+            <p id="room-status"></p>
+            <ul id="member-list" class="member-list"></ul>
+            <div class="button-row">
+                <button id="ready-button" type="button">Sẵn sàng</button>
+                <button id="leave-room-button" type="button" class="secondary-button">Rời phòng</button>
+            </div>
+        </section>
+
+        <section id="finished-panel" class="card finished-card hidden">
+            <h2>Trận đấu đã kết thúc</h2>
+            <p id="finished-result"></p>
+            <p id="rematch-status" class="subtle"></p>
+            <div class="button-row">
+                <button id="rematch-button" type="button">Chơi lại</button>
+                <a class="button-link secondary-button" href="/game.html">Xem kết quả</a>
+                <button id="leave-finished-room-button" type="button" class="secondary-button">Rời phòng</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="/js/home.js?v=20261117-7"></script>
+</body>
+</html>

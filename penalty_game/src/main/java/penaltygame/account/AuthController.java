@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataAccessException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,7 +20,7 @@ import penaltygame.config.CsrfTokenFilter;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-	private static final String SESSION_USER_ID = "authenticatedUserId";
+	public static final String SESSION_USER_ID = "authenticatedUserId";
 
 	private final AuthService authService;
 
@@ -30,16 +31,21 @@ public class AuthController {
 	@PostMapping("/register")
 	public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest, HttpServletRequest request) {
 		try {
-			AuthService.Player player = authService.register(registerRequest.username(), registerRequest.password(),
-					registerRequest.displayName());
+			AuthService.Player player = authService.register(registerRequest.email(), registerRequest.username(),
+					registerRequest.password(), registerRequest.confirmPassword());
 			createLoginSession(request, player.userId());
 			return ResponseEntity.status(HttpStatus.CREATED).body(PlayerResponse.from(player));
 		} catch (AuthService.AuthException exception) {
-			if ("USERNAME_TAKEN".equals(exception.getCode())) {
+			if ("USERNAME_TAKEN".equals(exception.getCode()) || "EMAIL_TAKEN".equals(exception.getCode())
+					|| "ACCOUNT_TAKEN".equals(exception.getCode())) {
 				return errorResponse(exception, HttpStatus.CONFLICT);
 			}
 
 			return errorResponse(exception, HttpStatus.BAD_REQUEST);
+		} catch (DataAccessException exception) {
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+					.body(Map.of("code", "DATABASE_UNAVAILABLE",
+							"message", "Chưa kết nối được MySQL; chưa thể tạo tài khoản."));
 		}
 	}
 
@@ -115,7 +121,7 @@ public class AuthController {
 				.body(Map.of("code", exception.getCode(), "message", exception.getMessage()));
 	}
 
-	public record RegisterRequest(String username, String password, String displayName) {
+	public record RegisterRequest(String email, String username, String password, String confirmPassword) {
 	}
 
 	public record LoginRequest(String username, String password) {

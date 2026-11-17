@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game đá luân lưu</title>
-    <link rel="stylesheet" href="/css/app.css">
+    <title>Đăng nhập - Game đá luân lưu</title>
+    <link rel="stylesheet" href="/css/app.css?v=20261117-visual1">
 </head>
 <body>
     <main class="page">
         <h1>Game đá luân lưu 2 người</h1>
-        <p id="message" class="message">Đăng nhập hoặc tạo tài khoản để bắt đầu.</p>
+        <p id="message" class="message">Đang kiểm tra phiên đăng nhập...</p>
 
-        <section id="guest-area" class="form-grid">
-            <form id="login-form" class="card">
+        <section id="guest-area" class="card">
+            <form id="login-form">
                 <h2>Đăng nhập</h2>
                 <label>
                     Tên đăng nhập
@@ -22,34 +22,13 @@
                     Mật khẩu
                     <input name="password" type="password" required minlength="8" maxlength="72" autocomplete="current-password">
                 </label>
-                <button type="submit">Đăng nhập</button>
+                <button id="login-button" type="submit">Đăng nhập</button>
             </form>
-
-            <form id="register-form" class="card">
-                <h2>Đăng ký</h2>
-                <label>
-                    Tên đăng nhập
-                    <input name="username" required pattern="[a-zA-Z0-9_]{3,50}" autocomplete="username">
-                </label>
-                <label>
-                    Tên hiển thị
-                    <input name="displayName" required minlength="2" maxlength="60" autocomplete="nickname">
-                </label>
-                <label>
-                    Mật khẩu
-                    <input name="password" type="password" required minlength="8" maxlength="72" autocomplete="new-password">
-                </label>
-                <button type="submit">Tạo tài khoản</button>
-            </form>
+            <p class="form-link">Chưa có tài khoản? <a href="/register.html">Đăng ký</a></p>
         </section>
 
-        <section id="player-area" class="card hidden">
-            <h2>Đã đăng nhập</h2>
-            <p id="player-name"></p>
-            <button id="logout-button" type="button">Đăng xuất</button>
-        </section>
     </main>
 
-    <script src="/js/app.js"></script>
+    <script src="/js/app.js?v=20261117-3"></script>
 </body>
 </html>

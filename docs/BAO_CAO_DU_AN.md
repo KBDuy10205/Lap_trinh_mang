@@ -7,7 +7,7 @@
 | Tên đề tài | Game đá luân lưu 2 người dùng Java Spring Boot, WebSocket, HTML/CSS/JavaScript thuần và MySQL |
 | Tài liệu đang có | `docs/Bo_prompt_Codex_10_giai_doan_Game_da_luan_luu.md`; `docs/CODEX_RULES.md`; `docs/Quy_trinh_xay_dung_phan_mem_chi_tiet.md` |
 | Tài liệu nguồn quy trình | `docs/Quy_trinh_xay_dung_phan_mem_chi_tiet.md`, đã đọc Mục 2 trong Phần 2 |
-| Thời điểm cập nhật | 10/11/2026 (Asia/Ho_Chi_Minh) |
+| Thời điểm cập nhật | 17/11/2026 (Asia/Ho_Chi_Minh) |
 | Phiên bản/commit được xem xét | `1a9aed6` (`Initial commit`) và các thay đổi chưa commit tại thời điểm rà soát |
 | Giai đoạn và điểm dừng hiện tại | Bước 2 (Mục 8.1) — đã có đăng ký/đăng nhập/đăng xuất dùng BCrypt, session và `JdbcTemplate`; chờ MySQL hợp lệ để kiểm tra end-to-end, chưa chuyển sang Bước 3 |
 
@@ -1130,7 +1130,7 @@ Thiết kế quy định transaction ngắn, không mở trong lúc chờ WebSoc
 
 | HTTP | Đường dẫn | Request/response chính | Quyền và lỗi |
 | --- | --- | --- | --- |
-| `POST` | `/api/auth/register` | `username`, `password`, `displayName` → user công khai | Khách; `USERNAME_TAKEN`, `VALIDATION_ERROR` |
+| `POST` | `/api/auth/register` | `email`, `username`, `password`, `confirmPassword` → user công khai | Khách; `USERNAME_TAKEN`, `EMAIL_TAKEN`, `PASSWORD_CONFIRMATION_MISMATCH`, `VALIDATION_ERROR` |
 | `POST` | `/api/auth/login` | `username`, `password` → user công khai/session | Khách; đổi session id; `INVALID_CREDENTIALS` |
 | `POST` | `/api/auth/logout` | CSRF token → xác nhận logout | Phiên hợp lệ; thu hồi socket |
 | `GET` / `PATCH` | `/api/me` | hồ sơ công khai / `displayName` | Chỉ chủ phiên; `UNAUTHENTICATED`, `CSRF_INVALID` |
@@ -1452,11 +1452,11 @@ README đã được cập nhật theo vị trí Maven project và DDL hiện h�
 
 - Thêm `spring-security-crypto` để mã hóa mật khẩu bằng BCrypt; không dùng JPA/Hibernate và không thêm toàn bộ Spring Security.
 - Hoàn thiện chức năng `account` theo MVC: controller nhận HTTP request, service kiểm tra nghiệp vụ và repository dùng `JdbcTemplate` với SQL có tham số.
-- Đăng ký tạo đồng thời bản ghi `accounts` và `player_profiles` trong một transaction. Tên đăng nhập trùng được báo `409`; dữ liệu sai được báo `400`.
+- Đăng ký yêu cầu `email`, `username`, `password`, `confirmPassword`; email và tên đăng nhập đều duy nhất. Server kiểm tra email hợp lệ, hai mật khẩu khớp và tạo đồng thời bản ghi `accounts`/`player_profiles` trong một transaction. Trùng dữ liệu được báo `409`; dữ liệu sai được báo `400`.
 - Đăng nhập kiểm tra BCrypt và trạng thái `ACTIVE`, sau đó tạo `HttpSession` mới chỉ lưu `authenticatedUserId`. Server tự lấy người chơi từ session, không nhận ID người chơi từ giao diện.
 - Đăng xuất hủy session. `GET /api/auth/me` dùng session để trả thông tin người chơi đang đăng nhập.
 - Thêm CSRF token tối giản cho các `POST /api/**`: trang lấy token từ `GET /api/auth/csrf` và gửi lại trong header `X-CSRF-TOKEN`. Đây là token để một trang ngoài origin không dễ gửi thay yêu cầu thay đổi dữ liệu; không thay thế cơ chế phân quyền cho các bước sau.
-- Tạo trang HTML/CSS/JavaScript tối giản tại `/` để đăng ký, đăng nhập, xem phiên và đăng xuất.
+- Tách giao diện thành `/` (đăng nhập) và `/register.html` (đăng ký); hai trang liên kết qua lại. Khi tạo tài khoản, `display_name` mặc định bằng `username` vì biểu mẫu đăng ký không còn yêu cầu tên hiển thị.
 
 #### Các file chính
 
@@ -1468,21 +1468,22 @@ README đã được cập nhật theo vị trí Maven project và DDL hiện h�
 | `penalty_game/src/main/java/penaltygame/account/AccountRepository.java` | Câu SQL `SELECT`/`INSERT` qua `JdbcTemplate` |
 | `penalty_game/src/main/java/penaltygame/account/AuthService.java` | Kiểm tra dữ liệu, BCrypt và transaction đăng ký |
 | `penalty_game/src/main/java/penaltygame/account/AuthController.java` | API đăng ký, đăng nhập, đăng xuất, phiên hiện tại và CSRF token |
-| `penalty_game/src/main/resources/static/index.html` | Giao diện tài khoản tối giản |
+| `database/penalty_game_mysql.sql`, `database/002_add_email_to_accounts.sql` | Email duy nhất cho schema mới và migration có kiểm soát cho schema cũ |
+| `penalty_game/src/main/resources/static/index.html`, `register.html` | Trang đăng nhập và đăng ký riêng, liên kết qua lại |
 | `penalty_game/src/main/resources/static/css/app.css` | Kiểu dáng giao diện |
-| `penalty_game/src/main/resources/static/js/app.js` | Gọi API cùng origin, gửi CSRF token và hiển thị trạng thái |
+| `penalty_game/src/main/resources/static/js/app.js`, `register.js` | Gọi API cùng origin, gửi CSRF token, kiểm tra xác nhận mật khẩu và hiển thị trạng thái |
 
 #### API và cách kiểm tra sau khi MySQL hoạt động
 
 | Thao tác | Request | Kết quả mong đợi |
 | --- | --- | --- |
 | Lấy CSRF token | `GET /api/auth/csrf` | `200` cùng cookie phiên và JSON chứa `token` |
-| Đăng ký | `POST /api/auth/register` với `username`, `password`, `displayName` và header token | `201`; tạo tài khoản, hồ sơ và session mới |
+| Đăng ký | `POST /api/auth/register` với `email`, `username`, `password`, `confirmPassword` và header token | `201`; tạo tài khoản, hồ sơ và session mới |
 | Đăng nhập | `POST /api/auth/login` với `username`, `password` và header token | `200`; session mới được tạo |
 | Xem phiên | `GET /api/auth/me` | `200` khi đã đăng nhập, `401` khi chưa đăng nhập |
 | Đăng xuất | `POST /api/auth/logout` cùng header token | `204`; gọi `/me` sau đó nhận `401` |
 
-Điều kiện dữ liệu ở server: `username` chỉ gồm chữ thường, số, dấu gạch dưới và dài 3–50 ký tự; mật khẩu dài 8–72 ký tự; `displayName` dài 2–60 ký tự. Mật khẩu thô không được trả về API hay lưu database.
+Điều kiện dữ liệu ở server: email không rỗng, dài tối đa 254 ký tự và có định dạng cơ bản; `username` chỉ gồm chữ thường, số, dấu gạch dưới và dài 3–50 ký tự; mật khẩu dài 8–72 ký tự; `confirmPassword` phải khớp mật khẩu. Mật khẩu thô không được trả về API hay lưu database.
 
 Chạy và kiểm tra thủ công khi đã có tài khoản MySQL hợp lệ:
 
@@ -1493,7 +1494,7 @@ $env:DB_PASSWORD = "mat_khau_cua_tai_khoan_nay"
 .\mvnw.cmd spring-boot:run
 ```
 
-Sau đó mở `http://localhost:8080/`, tạo một tài khoản, đăng xuất rồi đăng nhập lại. Dùng tên đăng nhập đã có để xác nhận lỗi trùng; dùng mật khẩu sai để xác nhận lỗi `401`.
+Sau đó mở `http://localhost:8080/register.html`, tạo một tài khoản, đăng xuất rồi đăng nhập lại ở `http://localhost:8080/`. Dùng tên đăng nhập hoặc email đã có để xác nhận lỗi trùng; dùng hai mật khẩu khác nhau để xác nhận lỗi xác nhận mật khẩu; dùng mật khẩu sai để xác nhận lỗi `401`.
 
 #### Kiểm tra đã thực hiện và giới hạn
 
@@ -1532,3 +1533,5 @@ Chưa thể kiểm tra đăng ký/đăng nhập với MySQL thật: server MySQL
 | 10/11/2026 | 7 — kiểm tra MySQL | Kiểm tra kết nối tạm thời bằng tài khoản `root` do người dùng cung cấp; không lưu bí mật | Cổng `localhost:3306` mở; endpoint `GET /api/health/database` trả `503 {"status":"DOWN"}` cả khi URL không chỉ database; cần kiểm tra xác thực/quyền `root` |
 | 10/11/2026 | 7 — cấu trúc mã | Rút gọn package Java từ `vn.edu.penaltygame` thành `penaltygame` và giữ các package chức năng bên dưới | `penalty_game\mvnw.cmd test` PASS: 1 test, 0 failure/error/skip |
 | 10/11/2026 | 8.1 — Bước 2 | Thêm đăng ký, đăng nhập, đăng xuất, BCrypt, `HttpSession`, CSRF token tối giản, SQL `JdbcTemplate` và giao diện tài khoản | `penalty_game\mvnw.cmd test` PASS: 1 test, 0 failure/error/skip, `BUILD SUCCESS`; chưa chạy end-to-end vì MySQL từ chối xác thực tài khoản hiện có |
+| 17/11/2026 | 8.1 — điều chỉnh tài khoản | Thêm email duy nhất vào `accounts`, kiểm tra email/xác nhận mật khẩu, tách trang đăng nhập và đăng ký | `penalty_game\mvnw.cmd test` PASS: 1 test, 0 failure/error/skip; chưa chạy migration hoặc đăng ký thật vì chưa có MySQL development hợp lệ |
+| 17/11/2026 | 8.2–8.5 — bắt đầu theo `Yeu_cau_phan_mem.md` | Thêm REST phòng, endpoint WebSocket cùng origin, chat nhanh có whitelist và `GameEngine` Java thuần | `penalty_game\mvnw.cmd test` biên dịch 22 file; 6 test `GameEngine` PASS. Chưa kiểm tra REST/WebSocket/MySQL thật; lưu lịch sử, reconnect và giao diện sân chưa được nghiệm chứng vì migration/kết nối MySQL còn chặn |

@@ -19,23 +19,27 @@ public class AuthService {
 	}
 
 	@Transactional
-	public Player register(String username, String password, String displayName) {
+	public Player register(String email, String username, String password, String confirmPassword) {
+		String normalizedEmail = validateEmail(email);
 		String normalizedUsername = validateUsername(username);
 		String validatedPassword = validatePassword(password);
-		String validatedDisplayName = validateDisplayName(displayName);
+		validatePasswordConfirmation(validatedPassword, confirmPassword);
 
 		if (accountRepository.findByUsername(normalizedUsername) != null) {
 			throw new AuthException("USERNAME_TAKEN", "Tên đăng nhập đã được sử dụng.");
 		}
+		if (accountRepository.existsByEmail(normalizedEmail)) {
+			throw new AuthException("EMAIL_TAKEN", "Email đã được sử dụng.");
+		}
 
 		try {
 			String passwordHash = passwordEncoder.encode(validatedPassword);
-			long userId = accountRepository.createAccount(normalizedUsername, passwordHash);
-			accountRepository.createProfile(userId, validatedDisplayName);
-			return new Player(userId, normalizedUsername, validatedDisplayName);
+			long userId = accountRepository.createAccount(normalizedUsername, normalizedEmail, passwordHash);
+			accountRepository.createProfile(userId, normalizedUsername);
+			return new Player(userId, normalizedUsername, normalizedUsername);
 		} catch (DuplicateKeyException exception) {
-			// Ràng buộc UNIQUE trong MySQL vẫn bảo vệ khi hai yêu cầu đăng ký đến cùng lúc.
-			throw new AuthException("USERNAME_TAKEN", "Tên đăng nhập đã được sử dụng.");
+			// UNIQUE ở MySQL vẫn bảo vệ khi hai yêu cầu cùng đăng ký username/email.
+			throw new AuthException("ACCOUNT_TAKEN", "Tên đăng nhập hoặc email đã được sử dụng.");
 		}
 	}
 
@@ -76,6 +80,20 @@ public class AuthService {
 		return normalizedUsername;
 	}
 
+	private String validateEmail(String email) {
+		if (email == null) {
+			throw new AuthException("VALIDATION_ERROR", "Email là bắt buộc.");
+		}
+
+		String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+		if (normalizedEmail.length() > 254
+				|| !normalizedEmail.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) {
+			throw new AuthException("VALIDATION_ERROR", "Email không đúng định dạng.");
+		}
+
+		return normalizedEmail;
+	}
+
 	private String validatePassword(String password) {
 		if (password == null || password.length() < 8 || password.length() > 72) {
 			throw new AuthException("VALIDATION_ERROR", "Mật khẩu phải dài từ 8 đến 72 ký tự.");
@@ -84,17 +102,10 @@ public class AuthService {
 		return password;
 	}
 
-	private String validateDisplayName(String displayName) {
-		if (displayName == null) {
-			throw new AuthException("VALIDATION_ERROR", "Tên hiển thị là bắt buộc.");
+	private void validatePasswordConfirmation(String password, String confirmPassword) {
+		if (confirmPassword == null || !password.equals(confirmPassword)) {
+			throw new AuthException("PASSWORD_CONFIRMATION_MISMATCH", "Xác nhận mật khẩu không khớp.");
 		}
-
-		String trimmedDisplayName = displayName.trim();
-		if (trimmedDisplayName.length() < 2 || trimmedDisplayName.length() > 60) {
-			throw new AuthException("VALIDATION_ERROR", "Tên hiển thị phải dài từ 2 đến 60 ký tự.");
-		}
-
-		return trimmedDisplayName;
 	}
 
 	public record Player(long userId, String username, String displayName) {

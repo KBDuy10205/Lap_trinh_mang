@@ -151,7 +151,7 @@ penalty_game/
 │   └── config/        # BCrypt, CSRF, kiểm tra database
 ├── src/main/resources/
 │   ├── application.properties
-│   └── static/        # index.html, css/app.css, js/app.js
+│   └── static/        # index.html, register.html, css/app.css, js/app.js, js/register.js
 └── pom.xml
 ```
 
@@ -160,12 +160,12 @@ penalty_game/
 | API | Mục đích | Kết quả chính |
 | --- | --- | --- |
 | `GET /api/auth/csrf` | Lấy token CSRF của session | `200`, JSON chứa `token` |
-| `POST /api/auth/register` | Tạo tài khoản và hồ sơ | `201`; `409` khi tên đăng nhập trùng |
+| `POST /api/auth/register` | Tạo tài khoản và hồ sơ | `201`; `409` khi email hoặc tên đăng nhập trùng |
 | `POST /api/auth/login` | Kiểm tra BCrypt và tạo session mới | `200`; `401` khi sai thông tin |
 | `GET /api/auth/me` | Lấy người chơi từ session hiện tại | `200` hoặc `401` |
 | `POST /api/auth/logout` | Hủy session | `204` |
 
-`username` được chuẩn hóa thành chữ thường và chỉ nhận 3–50 ký tự `[a-z0-9_]`. Mật khẩu dài 8–72 ký tự; tên hiển thị dài 2–60 ký tự. Các kiểm tra này nằm ở server, không chỉ ở giao diện.
+`email` là bắt buộc, được chuẩn hóa thành chữ thường, dài tối đa 254 ký tự và phải có định dạng cơ bản. `username` được chuẩn hóa thành chữ thường và chỉ nhận 3–50 ký tự `[a-z0-9_]`. Mật khẩu dài 8–72 ký tự và phải khớp `confirmPassword`. `display_name` mặc định bằng `username` khi đăng ký. Các kiểm tra này nằm ở server, không chỉ ở giao diện.
 
 ## 3.5. Giao thức WebSocket đề xuất
 
@@ -226,13 +226,13 @@ Không sử dụng JPA/Hibernate, React, Redis, Docker hay ORM khác.
 | `penalty_game/src/main/java/penaltygame/config/PasswordConfig.java` | Khởi tạo `BCryptPasswordEncoder` |
 | `penalty_game/src/main/java/penaltygame/config/CsrfTokenFilter.java` | So khớp token session/header cho request `POST` |
 | `penalty_game/src/main/java/penaltygame/config/DatabaseHealthController.java` | `GET /api/health/database`, chạy `SELECT 1` |
-| `penalty_game/src/main/resources/static/index.html` | Form đăng ký, đăng nhập, nút đăng xuất |
+| `penalty_game/src/main/resources/static/index.html`, `register.html` | Trang đăng nhập, trang đăng ký và liên kết qua lại |
 | `penalty_game/src/main/resources/static/js/app.js` | Gọi API, xử lý cookie same-origin và CSRF token |
 
 ### Ví dụ luồng đăng ký
 
 1. Client lấy token từ `GET /api/auth/csrf`.
-2. Client gửi `username`, `password`, `displayName` và header `X-CSRF-TOKEN` đến `/api/auth/register`.
+2. Client gửi `email`, `username`, `password`, `confirmPassword` và header `X-CSRF-TOKEN` đến `/api/auth/register`.
 3. `AuthService` kiểm tra dữ liệu, băm mật khẩu bằng BCrypt.
 4. `AccountRepository` chèn vào `accounts`, lấy `user_id`, rồi chèn `player_profiles` trong cùng transaction.
 5. Server tạo session mới, lưu `authenticatedUserId`, trả thông tin công khai của người chơi.
@@ -263,7 +263,7 @@ $env:DB_PASSWORD = "mat_khau_cua_tai_khoan_nay"
 
 Phần hiện tại không chèn ảnh chụp giả. Khi database kết nối thành công, nhóm nên chụp và đặt ảnh thật vào báo cáo/bản trình chiếu với các chú thích sau:
 
-1. Trang đăng ký/đăng nhập tại `/`.
+1. Trang đăng nhập tại `/` và trang đăng ký tại `/register.html`.
 2. Đăng ký thành công và trạng thái đã đăng nhập.
 3. Đăng xuất, sau đó `GET /api/auth/me` trả `401`.
 4. Kiểm tra database trả `UP`.

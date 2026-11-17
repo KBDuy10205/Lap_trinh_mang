@@ -6,6 +6,8 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/health")
 public class DatabaseHealthController {
+
+	private static final Logger logger = LoggerFactory.getLogger(DatabaseHealthController.class);
 
 	private final JdbcTemplate jdbcTemplate;
 
@@ -33,10 +37,30 @@ public class DatabaseHealthController {
 				return ResponseEntity.ok(Map.of("status", "UP"));
 			}
 		} catch (DataAccessException exception) {
+			Throwable cause = exception.getMostSpecificCause();
+			String reason = diagnosticReason(cause == null ? exception.getMessage() : cause.getMessage());
+			logger.warn("Database health check failed ({})", reason);
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+					.body(Map.of("status", "DOWN", "reason", reason));
 			// Không trả chi tiết lỗi kết nối để tránh lộ cấu hình cơ sở dữ liệu.
 		}
 
 		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
 				.body(Map.of("status", "DOWN", "message", "Không kết nối được MySQL."));
+	}
+
+	private String diagnosticReason(String databaseMessage) {
+		String message = databaseMessage == null ? "" : databaseMessage.toLowerCase();
+		if (message.contains("access denied")) {
+			return "AUTHENTICATION_FAILED";
+		}
+		if (message.contains("unknown database")) {
+			return "DATABASE_NOT_FOUND";
+		}
+		if (message.contains("communications link failure") || message.contains("connection refused")
+				|| message.contains("connect timed out")) {
+			return "CONNECTION_FAILED";
+		}
+		return "DATABASE_QUERY_FAILED";
 	}
 }

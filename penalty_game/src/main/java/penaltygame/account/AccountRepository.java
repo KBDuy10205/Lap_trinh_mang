@@ -56,14 +56,21 @@ public class AccountRepository {
 		return accounts.get(0);
 	}
 
-	public long createAccount(String username, String passwordHash) {
-		String sql = "INSERT INTO accounts (username, password_hash) VALUES (?, ?)";
+	public boolean existsByEmail(String email) {
+		String sql = "SELECT COUNT(*) FROM accounts WHERE email = ?";
+		Integer count = jdbcTemplate.queryForObject(sql, Integer.class, email);
+		return count != null && count > 0;
+	}
+
+	public long createAccount(String username, String email, String passwordHash) {
+		String sql = "INSERT INTO accounts (username, email, password_hash) VALUES (?, ?, ?)";
 		KeyHolder keyHolder = new GeneratedKeyHolder();
 
 		jdbcTemplate.update(connection -> {
 			PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 			statement.setString(1, username);
-			statement.setString(2, passwordHash);
+			statement.setString(2, email);
+			statement.setString(3, passwordHash);
 			return statement;
 		}, keyHolder);
 

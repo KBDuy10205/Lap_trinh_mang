@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - Game đá luân lưu</title>
+    <link rel="stylesheet" href="/css/app.css?v=20261117-visual1">
+</head>
+<body>
+    <main class="page">
+        <h1>Game đá luân lưu 2 người</h1>
+        <p id="message" class="message">Tạo tài khoản để bắt đầu.</p>
+
+        <section class="card">
+            <form id="register-form">
+                <h2>Đăng ký</h2>
+                <label>
+                    Email
+                    <input name="email" type="email" required maxlength="254" autocomplete="email">
+                </label>
+                <label>
+                    Tên đăng nhập
+                    <input name="username" required pattern="[a-zA-Z0-9_]{3,50}" autocomplete="username">
+                </label>
+                <label>
+                    Mật khẩu
+                    <input name="password" type="password" required minlength="8" maxlength="72" autocomplete="new-password">
+                </label>
+                <label>
+                    Nhập lại mật khẩu
+                    <input name="confirmPassword" type="password" required minlength="8" maxlength="72" autocomplete="new-password">
+                </label>
+                <button id="register-button" type="submit">Tạo tài khoản</button>
+            </form>
+            <p class="form-link">Đã có tài khoản? <a href="/">Đăng nhập</a></p>
+        </section>
+    </main>
+
+    <script src="/js/register.js?v=20261117-2"></script>
+</body>
+</html>
