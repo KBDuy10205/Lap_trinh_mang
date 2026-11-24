@@ -18,6 +18,7 @@ import penaltygame.account.AuthController;
 public class GameWebSocketHandler extends TextWebSocketHandler {
 
 	private final Map<Long, WebSocketSession> sessions = new ConcurrentHashMap<>();
+	private final Map<WebSocketSession, Long> roomBySession = new ConcurrentHashMap<>();
 	private final JsonMapper jsonMapper;
 
 	public GameWebSocketHandler(JsonMapper jsonMapper) { this.jsonMapper = jsonMapper; }
@@ -40,17 +41,31 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
 		if (!"QUICK_CHAT".equals(type)) { send(session, Map.of("type", "ERROR", "code", "UNSUPPORTED_MESSAGE")); return; }
 		String phrase = String.valueOf(payload.get("phraseCode"));
 		if (!phrase.matches("(HELLO|GOOD_LUCK|NICE_SHOT|REMATCH)")) { send(session, Map.of("type", "ERROR", "code", "INVALID_CHAT")); return; }
-		broadcast(Map.of("type", "QUICK_CHAT", "userId", userId, "phraseCode", phrase));
+		Long roomId = payload.get("roomId") instanceof Number number ? number.longValue() : null;
+		if (roomId == null) { send(session, Map.of("type", "ERROR", "code", "INVALID_ROOM")); return; }
+		roomBySession.put(session, roomId);
+		broadcastRoom(roomId, Map.of("type", "QUICK_CHAT", "userId", userId, "phraseCode", phrase));
 	}
 
 	@Override
 	public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+		roomBySession.remove(session);
 		Object value = session.getAttributes().get(AuthController.SESSION_USER_ID);
 		if (value instanceof Long userId) sessions.remove(userId, session);
 	}
 
 	public void broadcast(Map<String, Object> message) {
 		for (WebSocketSession session : sessions.values()) { try { if (session.isOpen()) send(session, message); } catch (IOException ignored) { } }
+	}
+
+	private void broadcastRoom(long roomId, Map<String, Object> message) {
+		roomBySession.forEach((session, sessionRoomId) -> {
+			if (!sessionRoomId.equals(roomId)) return;
+			try {
+				if (session.isOpen()) send(session, message);
+			} catch (IOException ignored) {
+			}
+		});
 	}
 
 	private void send(WebSocketSession session, Map<String, Object> message) throws IOException { session.sendMessage(new TextMessage(jsonMapper.writeValueAsString(message))); }

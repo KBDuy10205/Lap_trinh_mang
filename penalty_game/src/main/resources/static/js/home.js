@@ -11,6 +11,9 @@ const roomCodeElement = document.querySelector("#room-code");
 const roomStatusElement = document.querySelector("#room-status");
 const memberListElement = document.querySelector("#member-list");
 const readyButton = document.querySelector("#ready-button");
+const historyList = document.querySelector("#history-list");
+const historySummary = document.querySelector("#history-summary");
+const refreshHistoryButton = document.querySelector("#refresh-history-button");
 let csrfToken = "";
 let currentPlayer = null;
 let currentRoom = null;
@@ -228,13 +231,61 @@ async function startPage() {
         currentPlayer = await request("/api/auth/me");
         playerNameElement.textContent = `Xin chào ${currentPlayer.displayName} (${currentPlayer.username})`;
         await loadRoom();
+        await loadHistory();
         showMessage(currentRoom ? "Bạn đang ở phòng chờ." : "Chọn tạo phòng hoặc nhập mã phòng để tham gia.");
     } catch (error) {
         if (error.message !== "Phiên đăng nhập đã hết hạn.") showMessage(error.message, true);
     }
 }
 
+async function loadHistory() {
+    refreshHistoryButton.disabled = true;
+    try {
+        const history = await request("/api/history");
+        const wins = history.filter((item) => item.result === "WIN").length;
+        const losses = history.filter((item) => item.result === "LOSS").length;
+        historySummary.replaceChildren();
+        for (const [label, value] of [["Trận", history.length], ["Thắng", wins], ["Thua", losses]]) {
+            const stat = document.createElement("div");
+            stat.className = "history-stat";
+            stat.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
+            historySummary.append(stat);
+        }
+        historyList.replaceChildren();
+        if (history.length === 0) {
+            const empty = document.createElement("p");
+            empty.className = "subtle";
+            empty.textContent = "Chưa có trận đấu nào.";
+            historyList.append(empty);
+            return;
+        }
+        for (const item of history) {
+            const row = document.createElement("article");
+            row.className = "history-item";
+            const resultClass = item.result === "WIN" ? "win" : item.result === "LOSS" ? "loss" : "draw";
+            const resultText = item.result === "WIN" ? "THẮNG" : item.result === "LOSS" ? "THUA" : "HỦY";
+            row.innerHTML = `<div><strong>vs ${escapeHtml(item.opponentName)}</strong><time>${escapeHtml(item.endedAt)}</time></div><span class="history-result ${resultClass}">${resultText} · ${item.scoreYour}:${item.scoreOpponent}</span>`;
+            historyList.append(row);
+        }
+    } catch (error) {
+        historyList.replaceChildren();
+        const empty = document.createElement("p");
+        empty.className = "message error";
+        empty.textContent = error.message;
+        historyList.append(empty);
+    } finally {
+        refreshHistoryButton.disabled = false;
+    }
+}
+
+function escapeHtml(value) {
+    const element = document.createElement("span");
+    element.textContent = String(value ?? "");
+    return element.innerHTML;
+}
+
 startPage();
+refreshHistoryButton.addEventListener("click", loadHistory);
 setInterval(function () {
     if (currentPlayer && currentRoom) {
         loadRoom().catch(() => {});

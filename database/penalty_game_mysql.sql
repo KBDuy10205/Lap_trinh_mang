@@ -115,6 +115,8 @@ CREATE TABLE turn_choices (
 CREATE TABLE match_results (
   match_id BIGINT UNSIGNED PRIMARY KEY,
   winner_slot TINYINT UNSIGNED NULL,
+  score_slot1 TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  score_slot2 TINYINT UNSIGNED NOT NULL DEFAULT 0,
   end_reason ENUM('NORMAL','FORFEIT','CANCELLED') NOT NULL,
   ended_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   KEY ix_result_winner (match_id, winner_slot),
