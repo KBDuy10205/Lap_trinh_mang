@@ -29,6 +29,19 @@ let match = null;
 let submittedTurn = null;
 let lastPresentedResolution = 0;
 let isPresentingResolution = false;
+let chatSocket = null;
+let chatRoomId = null;
+
+const chatLog = document.querySelector("#chat-log");
+const chatStatus = document.querySelector("#chat-status");
+const quickChatButtons = [...document.querySelectorAll("[data-phrase]")];
+
+const chatLabels = {
+    HELLO: "Xin chào!",
+    GOOD_LUCK: "Chúc may mắn!",
+    NICE_SHOT: "Sút đẹp!",
+    REMATCH: "Chơi lại nhé?"
+};
 
 function showMessage(message, isError = false) {
     messageElement.textContent = message;
@@ -143,10 +156,47 @@ async function loadInitialState() {
     }
     const ownMember = room.members.find((member) => member.userId === player.userId);
     ownSlot = ownMember?.slot;
+    chatRoomId = room.roomId;
     playerOneName.textContent = room.members.find((member) => member.slot === 1)?.displayName || "Người chơi 1";
     playerTwoName.textContent = room.members.find((member) => member.slot === 2)?.displayName || "Người chơi 2";
     await refreshMatch();
+    connectChat();
 }
+
+function connectChat() {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    chatSocket = new WebSocket(`${protocol}//${window.location.host}/ws/game`);
+    chatSocket.addEventListener("open", function () {
+        chatStatus.textContent = "Đã kết nối";
+        appendChatMessage("Hệ thống", "Đã kết nối chat nhanh.", false);
+    });
+    chatSocket.addEventListener("close", function () {
+        chatStatus.textContent = "Mất kết nối";
+    });
+    chatSocket.addEventListener("message", function (event) {
+        const payload = JSON.parse(event.data);
+        if (payload.type !== "QUICK_CHAT") return;
+        appendChatMessage(payload.userId === player?.userId ? "Bạn" : "Đối thủ", chatLabels[payload.phraseCode] || payload.phraseCode, payload.userId === player?.userId);
+    });
+}
+
+function appendChatMessage(sender, text, own) {
+    const message = document.createElement("div");
+    message.className = `chat-message${own ? " own" : ""}`;
+    message.textContent = `${sender}: ${text}`;
+    chatLog.append(message);
+    chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+quickChatButtons.forEach((button) => {
+    button.addEventListener("click", function () {
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN || !chatRoomId) {
+            chatStatus.textContent = "Chưa kết nối";
+            return;
+        }
+        chatSocket.send(JSON.stringify({ type: "QUICK_CHAT", roomId: chatRoomId, phraseCode: button.dataset.phrase }));
+    });
+});
 
 async function refreshMatch() {
     try {
